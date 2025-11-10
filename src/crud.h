@@ -18,6 +18,8 @@ typedef struct {
 int open_database(const char *folder, const char *filename);
 void show_all_records(void);
 void query_record(int id);  // Query by student ID
+int delete_record_by_id(int id); // Delete by student ID
+int count_records_by_id(int id);
 void free_records(void);
 
 #endif // CRUD_H

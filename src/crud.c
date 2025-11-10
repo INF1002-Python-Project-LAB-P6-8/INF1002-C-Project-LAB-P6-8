@@ -105,6 +105,37 @@ void query_record(int id) {
     }
 }
 
+//delete record by student ID
+int delete_record_by_id(int id) {
+    if (records == NULL || record_count == 0) {
+        return -1;
+    }
+    for (int i = 0; i < record_count; i++) {
+        if (records[i].id == id) {
+            for (int j = i + 1; j < record_count; j++) { 
+                records[j - 1] = records[j];
+            }
+            record_count--;
+            memset(&records[record_count], 0, sizeof(Record));
+                return 1;
+        }
+    }
+    return 0;   
+}
+
+int count_records_by_id(int id) {
+    if (records == NULL || record_count == 0) {
+        return -1;
+    }
+    int count = 0;
+    for (int i = 0; i < record_count; i++) {
+        if (records[i].id == id) {
+            count++;
+        }
+    }
+    return count;
+}
+
 // Free the memory used for records
 void free_records(void) {
     if (records != NULL) {

@@ -18,6 +18,7 @@ static void print_menu(void) {
     puts("open  - Open the database");
     puts("show all  - Show all records");
     puts("query ID=<id>  - Query a record by ID");
+    puts("delete ID=<id> - Delete records(s) by ID (with confirmation)");
     puts("exit  - Exit the program");
     printf("Enter command: ");
 }
@@ -53,6 +54,49 @@ static void action_query(char *command) {
     }
 }
 
+//Action to delete record(s) by ID with a single confirmation
+static void action_delete(char *command) {
+    int id;
+    if (sscanf(command, "delete ID=%d", &id) !=1) {
+        printf("Invalid delete format. Use: delete ID=<id>\n");
+        return;
+    }
+
+    int cnt = count_records_by_id(id);
+    if (cnt == -1) {
+        puts("CMS: No records loaded. Please open the database first.");
+        return;
+    }
+    if (cnt == 0) {
+        printf("CMS: The record with ID=%d does not exist.\n", id);
+        return;
+    }
+
+    printf("CMS: Are you sure you want to delete record with ID=%d? Type \"Y\" to Confirm or type \"N\" to cancel.\n", id);
+    char answer[16];
+    read_command(answer, sizeof(answer));
+
+    if (strcmp(answer, "Y") == 0 || strcmp(answer, "y") == 0) {
+        // Delete all records with the same ID by repeatedly deleting one
+        int total_deleted = 0;
+        while (1) {
+            int rc = delete_record_by_id(id);
+            if (rc == 1) {
+                total_deleted++;
+                continue;
+            }
+            break;
+        }
+        if (total_deleted > 0) {
+            printf("CMS: The record with ID=%d is successfully deleted.\n", id);
+        } else { 
+            printf("CMS: The record with ID=%d does not exist.\n", id);
+        }
+    } else {
+        puts("CMS: The deletion is cancelled.");
+    }
+}
+
 // Main function
 int main(void) {
     show_declaration();  // Show declaration when the program starts
@@ -67,7 +111,9 @@ int main(void) {
         } else if (strncmp(command, "show all", 8) == 0) {
             action_show_all();
         } else if (strncmp(command, "query", 5) == 0) {
-            action_query(command);
+            action_query(command); 
+        } else if (strncmp(command, "delete", 6) == 0) {
+            action_delete(command);
         } else if (strncmp(command, "exit", 4) == 0) {
             puts("Exiting. Goodbye!");
             free_records();
