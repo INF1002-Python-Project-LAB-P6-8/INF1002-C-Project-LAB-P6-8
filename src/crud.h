@@ -22,4 +22,18 @@ int delete_record_by_id(int id); // Delete by student ID
 int count_records_by_id(int id);
 void free_records(void);
 
+int insert_record(const char* input); // Insert function
+
+//validations for insert 
+int id_check(int input);
+int name_check(const char* input);
+int mark_check(const char* input);
+int prog_check(const char* input);
+
+//Text filtering
+void normalise_spaces(char* input);
+void remove_spaces(char* input);
+
+int save_table(const char* filename); //Save function
+
 #endif // CRUD_H
