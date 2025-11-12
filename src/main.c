@@ -97,6 +97,43 @@ static void action_delete(char *command) {
     }
 }
 
+//Action to save the changes to the database
+static void action_save(char* command) {
+    const char* filename = "C:\\Users\\Wing3\\Desktop\\y1t1\\programming\\C\\C project\\main\\x64\\Debug\\P6-8-CMS.txt"; // Update filename to match expected output
+    if (save_table(filename) == 0) {
+        printf("\nDatabase successfully updated\n");
+    }
+    else {
+        printf("\nError updating database please try again.\n");
+    }
+}
+
+// Action for insert function and page
+static void action_insert(void) {
+    while (1) {
+        char command[255];
+
+        puts("\n--- CMS insert ---");
+        puts("To insert into the database please follow the format:");
+        puts("ID=<ID of student> Name=<Name of student> Programme=<Programme the student is enrolled in> Mark=<Their grade>");
+        puts("EXAMPLE: INSERT ID=2401234 Name=Michelle Lee Programme=Information Security Mark=73.2");
+        puts("To go back, enter back");
+        printf(">>>");
+
+        read_command(command, sizeof(command));
+
+        if (strncmp(command, "back", 4) == 0) {
+            break;
+        }
+        if (insert_record(command) == 0) {
+            printf("New changes added to the table\n");
+
+        }
+
+    }
+}
+
+
 // Main function
 int main(void) {
     show_declaration();  // Show declaration when the program starts
@@ -108,18 +145,29 @@ int main(void) {
 
         if (strncmp(command, "open", 4) == 0) {
             action_open();
-        } else if (strncmp(command, "show all", 8) == 0) {
+        } 
+        else if (strncmp(command, "show all", 8) == 0) {
             action_show_all();
-        } else if (strncmp(command, "query", 5) == 0) {
-            action_query(command); 
-        } else if (strncmp(command, "delete", 6) == 0) {
+        }
+        else if (strncmp(command, "query", 5) == 0) {
+            action_query(command);
+        } else if (strncmp(command, "insert", 6) == 0) {
+            action_insert();
+        }
+        else if (strncmp(command, "delete", 6) == 0) {
             action_delete(command);
-        } else if (strncmp(command, "exit", 4) == 0) {
+        }
+        else if (strncmp(command, "save", 4) == 0) {
+            action_save(command);
+        } 
+        else if (strncmp(command, "exit", 4) == 0) {
             puts("Exiting. Goodbye!");
             free_records();
             return 0;
-        } else {
+        } 
+        else {
             puts("Invalid command. Please try again.");
         }
     }
 }
+
