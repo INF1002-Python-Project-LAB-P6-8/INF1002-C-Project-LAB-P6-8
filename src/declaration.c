@@ -22,7 +22,7 @@ void show_declaration(void)
         "\n"
         "Declared by: P6-8\n"
         "Team members:\n"
-        "1. xxx\n"
+        "1. Lee Zhan Bin Skyler (2500339)\n"
         "2. Rifa Ilyasa Achrinza (2501769)\n"
         "3. xxx\n"
         "4. (Add remaining names if any)\n"

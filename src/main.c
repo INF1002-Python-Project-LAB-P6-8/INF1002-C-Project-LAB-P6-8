@@ -50,13 +50,7 @@ static void action_show_all(void) {
 
 // Action to query a record by ID
 static void action_query(char *command) {
-    int id;
-    // Extract the ID from the query command (format: query ID=<id>)
-    if (sscanf(command, "query ID=%d", &id) == 1) {
-        query_record(id);
-    } else {
-        printf("Invalid query format. Use: query ID=<id>\n");
-    }
+    query_record(command);  // Pass the full query command (e.g., query ID=1234 or query Name=Joshua)
 }
 
 //Action to delete record(s) by ID with a single confirmation

@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <ctype.h>
+#include <math.h>
 #include "crud.h"
 
 // Static variables for holding records
@@ -86,27 +87,194 @@ void show_all_records(void) {
 }
 
 // Query a record based on the student ID
-void query_record(int id) {
+void query_record(const char *command) {
     bool found = false;
+    int id;
+    char name[64];
+    char programme[64];
+    float mark;
 
-    // Print the column headers
-    printf("The record with ID=%d ", id);
-    
-    // Search for the record
-    for (int i = 0; i < record_count; i++) {
-        if (records[i].id == id) {
-            // Record found, print the "found" message and the record
-            printf("is found in the data table.\n");
-            printf("%-10s %-20s %-25s %-10s\n", "ID", "Name", "Programme", "Mark"); // Column headers
-            printf("%-10d %-20s %-25s %-10.1f\n", records[i].id, records[i].name, records[i].programme, records[i].mark);
-            found = true;
-            break;
+    // Helper: trim leading/trailing spaces 
+    void trim_spaces(char *str) {
+        int start = 0, end = strlen(str) - 1;
+
+        while (isspace((unsigned char)str[start])) start++;
+        while (end >= start && isspace((unsigned char)str[end])) end--;
+
+        for (int i = start; i <= end; i++)
+            str[i - start] = str[i];
+
+        str[end - start + 1] = '\0';
+    }
+
+    // Helper: normalize multiple spaces to single 
+    void normalize_spaces(char *str) {
+        int i = 0, j = 0;
+        while (str[i]) {
+            if (isspace((unsigned char)str[i])) {
+                if (j > 0 && !isspace((unsigned char)str[j - 1]))
+                    str[j++] = ' ';
+            } else {
+                str[j++] = str[i];
+            }
+            i++;
+        }
+        str[j] = '\0';
+    }
+
+    // Helper: case-insensitive substring search
+    char* strcasestr_local(const char *haystack, const char *needle) {
+        char h[128], n[64];
+        int i = 0;
+
+        // lowercase haystack
+        while (haystack[i] && i < 127) {
+            h[i] = tolower(haystack[i]);
+            i++;
+        }
+        h[i] = '\0';
+
+        // lowercase needle
+        i = 0;
+        while (needle[i] && i < 63) {
+            n[i] = tolower(needle[i]);
+            i++;
+        }
+        n[i] = '\0';
+
+        return strstr(h, n);
+    }
+
+    //  ID QUERY 
+    if (sscanf(command, "query ID=%d", &id) == 1) {
+
+        for (int i = 0; i < record_count; i++) {
+            if (records[i].id == id) {
+                if (!found) {
+                    printf("Record(s) with ID=%d found:\n", id);
+                    printf("%-10s %-20s %-25s %-10s\n",
+                           "ID", "Name", "Programme", "Mark");
+                }
+                printf("%-10d %-20s %-25s %-10.1f\n",
+                       records[i].id, records[i].name,
+                       records[i].programme, records[i].mark);
+                found = true;
+            }
+        }
+    }
+    //  NAME QUERY 
+    else if (sscanf(command, "query Name=%63[^\n]", name) == 1) {
+        trim_spaces(name);
+        normalize_spaces(name);
+
+        for (int i = 0; i < record_count; i++) {
+            char recname[64];
+            strcpy(recname, records[i].name);
+            trim_spaces(recname);
+            normalize_spaces(recname);
+
+            if (strcasestr_local(recname, name)) {   // PARTIAL MATCH
+                if (!found) {
+                    printf("Record(s) with Name containing \"%s\" found:\n", name);
+                    printf("%-10s %-20s %-25s %-10s\n",
+                           "ID", "Name", "Programme", "Mark");
+                }
+                printf("%-10d %-20s %-25s %-10.1f\n",
+                       records[i].id, records[i].name,
+                       records[i].programme, records[i].mark);
+                found = true;
+            }
+        }
+    }
+    // PROGRAMME QUERY 
+    else if (sscanf(command, "query Programme=%63[^\n]", programme) == 1) {
+        trim_spaces(programme);
+        normalize_spaces(programme);
+
+        for (int i = 0; i < record_count; i++) {
+            char recprog[64];
+            strcpy(recprog, records[i].programme);
+            trim_spaces(recprog);
+            normalize_spaces(recprog);
+
+            if (strcasestr_local(recprog, programme)) { // PARTIAL MATCH
+                if (!found) {
+                    printf("Record(s) with Programme containing \"%s\" found:\n", programme);
+                    printf("%-10s %-20s %-25s %-10s\n",
+                           "ID", "Name", "Programme", "Mark");
+                }
+                printf("%-10d %-20s %-25s %-10.1f\n",
+                       records[i].id, records[i].name,
+                       records[i].programme, records[i].mark);
+                found = true;
+            }
         }
     }
 
-    // If no record was found
+    // MARK QUERY 
+    else if (strncmp(command, "query Mark=", 11) == 0) {
+        char operator[3] = "==";  // Default to exact match
+        float query_mark;
+        const char *mark_str = command + 11;  // Skip "query Mark="
+        
+        // Check for comparison operators
+        if (mark_str[0] == '>') {
+            if (mark_str[1] == '=') {
+                strcpy(operator, ">=");
+                query_mark = atof(mark_str + 2);
+            } else {
+                strcpy(operator, ">");
+                query_mark = atof(mark_str + 1);
+            }
+        } else if (mark_str[0] == '<') {
+            if (mark_str[1] == '=') {
+                strcpy(operator, "<=");
+                query_mark = atof(mark_str + 2);
+            } else {
+                strcpy(operator, "<");
+                query_mark = atof(mark_str + 1);
+            }
+        } else {
+            // No operator, exact match
+            query_mark = atof(mark_str);
+        }
+
+        for (int i = 0; i < record_count; i++) {
+            bool match = false;
+            
+            if (strcmp(operator, "==") == 0) {
+                // Use epsilon for floating point comparison
+                match = (fabs(records[i].mark - query_mark) < 0.01);
+            } else if (strcmp(operator, ">") == 0) {
+                match = (records[i].mark > query_mark);
+            } else if (strcmp(operator, ">=") == 0) {
+                match = (records[i].mark >= query_mark);
+            } else if (strcmp(operator, "<") == 0) {
+                match = (records[i].mark < query_mark);
+            } else if (strcmp(operator, "<=") == 0) {
+                match = (records[i].mark <= query_mark);
+            }
+            
+            if (match) {
+                if (!found) {
+                    if (strcmp(operator, "==") == 0) {
+                        printf("Record(s) with Mark=%.1f found:\n", query_mark);
+                    } else {
+                        printf("Record(s) with Mark%s%.1f found:\n", operator, query_mark);
+                    }
+                    printf("%-10s %-20s %-25s %-10s\n",
+                        "ID", "Name", "Programme", "Mark");
+                }
+                printf("%-10d %-20s %-25s %-10.1f\n",
+                    records[i].id, records[i].name,
+                    records[i].programme, records[i].mark);
+                found = true;
+            }
+        }
+    }
+
     if (!found) {
-        printf("does not exist.\n");
+        printf("No matching record found.\n");
     }
 }
 
