@@ -23,7 +23,7 @@ void show_declaration(void)
         "Declared by: P6-8\n"
         "Team members:\n"
         "1. xxx\n"
-        "2. xxx\n"
+        "2. Rifa Ilyasa Achrinza (2501769)\n"
         "3. xxx\n"
         "4. (Add remaining names if any)\n"
         "Date: 25 November 2025\n";

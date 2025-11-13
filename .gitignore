@@ -1,4 +1,11 @@
 .vscode
 
-#actual exe
+# Compiler files
 cms
+*.gch
+.gdb_history
+
+# Emacs
+*~
+\#*#
+.#*

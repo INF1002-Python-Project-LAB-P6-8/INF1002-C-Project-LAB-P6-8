@@ -4,6 +4,7 @@
 #include <string.h>
 #include "declaration.h"
 #include "crud.h"
+#include "update.h"
 
 // Function to read a string command from the user
 static void read_command(char *buf, size_t size) {
@@ -20,6 +21,7 @@ static void print_menu(void) {
     puts("show all  - Show all records");
     puts("query ID=<id>  - Query a record by ID");
     puts("delete ID=<id> - Delete records(s) by ID (with confirmation)");
+    puts("update <find_column>=<find_value> <update_column>=<new_value> - Update record");
     puts("exit  - Exit the program");
     printf("Enter command: ");
 }
@@ -138,6 +140,8 @@ static void action_insert(void) {
 // Main function
 int main(void) {
     show_declaration();  // Show declaration when the program starts
+    Record *records;
+    int record_count;
 
     while (1) {
         print_menu();
@@ -157,6 +161,10 @@ int main(void) {
         }
         else if (strncmp(command, "delete", 6) == 0) {
             action_delete(command);
+        }
+        else if (strncmp(command, "update", 6) == 0) {
+          get_record_refs(&records, &record_count);
+          action_update(records, record_count, command);
         }
         else if (strncmp(command, "save", 4) == 0) {
             action_save(command);
