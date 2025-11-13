@@ -104,7 +104,7 @@ static void action_delete(char *command) {
 }
 
 //Action to save the changes to the database
-static void action_save(char* command) {
+static void action_save(void) {
     const char* filename = "C:\\Users\\Wing3\\Desktop\\y1t1\\programming\\C\\C project\\main\\x64\\Debug\\P6-8-CMS.txt"; // Update filename to match expected output
     if (save_table(filename) == 0) {
         printf("\nDatabase successfully updated\n");
@@ -168,7 +168,7 @@ int main(void) {
           action_update(records, record_count, command);
         }
         else if (strncmp(command, "save", 4) == 0) {
-            action_save(command);
+            action_save();
         } 
         else if (strncmp(command, "exit", 4) == 0) {
             puts("Exiting. Goodbye!");

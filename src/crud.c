@@ -151,7 +151,7 @@ void free_records(void) {
 }
 
 //Insert function
-int insert_record(const char* input) {
+int insert_record(char* input) {
     // Check if it starts with INSERT
     if (strncmp(input, "INSERT ", 7) != 0) {
         printf("\nError: Command must start with INSERT\n");
