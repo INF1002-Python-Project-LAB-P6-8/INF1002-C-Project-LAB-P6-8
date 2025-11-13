@@ -266,7 +266,7 @@ int id_check(int input) {
 
 
 // Name field input validation
-int name_check(const char* input) {
+int name_check(char* input) {
     normalise_spaces(input);
 
     size_t len = strlen(input);
@@ -286,7 +286,7 @@ int name_check(const char* input) {
 
 
 // Programme field input validation
-int prog_check(const char* input) {
+int prog_check(char* input) {
     normalise_spaces(input);
     size_t len = strlen(input);
     if (len == 0 || len >= 64) {
@@ -306,7 +306,7 @@ int prog_check(const char* input) {
 
 
 // Mark field input validation
-int mark_check(const char* input) {
+int mark_check(char* input) {
     remove_spaces(input);
     int dot_count = 0;
     int digits_after_dot = 0;
