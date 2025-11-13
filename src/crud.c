@@ -144,3 +144,38 @@ void free_records(void) {
         record_count = 0;
     }
 }
+
+void show_summary(void) {
+    if (records == NULL || record_count == 0) {
+        puts("CMS: No records loaded. Please open the database first.");
+        return;
+    }
+
+    float total_marks = 0;
+    float highest_mark = records[0].mark;
+    float lowest_mark = records[0].mark;
+	char highest_mark_student[64];
+	char lowest_mark_student[64];
+	strcpy(highest_mark_student, records[0].name);
+	strcpy(lowest_mark_student, records[0].name);
+
+    for (int i = 0; i < record_count; i++) {
+        total_marks += records[i].mark;
+        if (records[i].mark > highest_mark) {
+            highest_mark = records[i].mark;
+			strcpy(highest_mark_student, records[i].name);
+        }
+        if (records[i].mark < lowest_mark) {
+            lowest_mark = records[i].mark;
+			strcpy(lowest_mark_student, records[i].name);
+        }
+    }
+
+    float average_mark = total_marks / record_count;
+
+    printf("Summary of Student Records\n");
+    printf("Total Records: %d\n", record_count);
+    printf("Average Mark: %.1f\n", average_mark);
+    printf("Highest Mark: %.1f by %s\n", highest_mark, highest_mark_student);
+    printf("Lowest Mark: %.1f by %s\n", lowest_mark, lowest_mark_student);
+}
