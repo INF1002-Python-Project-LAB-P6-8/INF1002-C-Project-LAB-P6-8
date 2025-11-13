@@ -20,9 +20,9 @@ void free_records(void);
 int insert_record(const char* input); // Insert function
 
 int id_check(int input);
-int name_check(const char* input);
-int mark_check(const char* input);
-int prog_check(const char* input);
+int name_check(char* input);
+int mark_check(char* input);
+int prog_check(char* input);
 
 void normalise_spaces(char* input);
 void remove_spaces(char* input);
