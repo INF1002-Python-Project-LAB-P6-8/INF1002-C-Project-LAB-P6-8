@@ -33,7 +33,10 @@ int open_database(const char *folder, const char *filename) {
 
     // Skip metadata lines
     while (fgets(line, sizeof(line), file)) {
-        if (strstr(line, "ID") && strstr(line, "Name") && strstr(line, "Programme") && strstr(line, "Mark")) {
+        if (strstr(line, "ID") &&
+            strstr(line, "Name") &&
+            strstr(line, "Programme") &&
+            strstr(line, "Mark")) {
             break;
         }
     }
@@ -452,4 +455,7 @@ int save_table(const char* filename) {
     return 0;
 }
 
-
+void get_record_refs(Record **records_out, int *record_count_out) {
+  *records_out = records;
+  *record_count_out = record_count;
+}
