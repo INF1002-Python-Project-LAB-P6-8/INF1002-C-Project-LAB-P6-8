@@ -17,7 +17,7 @@ int delete_record_by_id(int id); // Delete by student ID
 int count_records_by_id(int id);
 void free_records(void);
 
-int insert_record(const char* input); // Insert function
+int insert_record(char* input); // Insert function
 
 int id_check(int input);
 int name_check(char* input);
