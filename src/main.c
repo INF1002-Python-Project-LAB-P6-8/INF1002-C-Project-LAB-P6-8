@@ -20,8 +20,10 @@ static void print_menu(void) {
     puts("open  - Open the database");
     puts("show all  - Show all records");
     puts("query ID=<id>  - Query a record by ID");
+    puts("insert - Open insert menu");
     puts("delete ID=<id> - Delete records(s) by ID (with confirmation)");
     puts("update <find_column>=<find_value> <update_column>=<new_value> - Update record");
+    puts("save - save changes to the database");
     puts("exit  - Exit the program");
     printf("Enter command: ");
 }
