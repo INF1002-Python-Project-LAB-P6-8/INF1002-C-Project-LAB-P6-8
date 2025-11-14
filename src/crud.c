@@ -488,9 +488,10 @@ void show_summary(void) {
 
     float average_mark = total_marks / record_count;
 
-    printf("Summary of Student Records\n");
-    printf("Total Records: %d\n", record_count);
-    printf("Average Mark: %.1f\n", average_mark);
-    printf("Highest Mark: %.1f by %s\n", highest_mark, highest_mark_student);
-    printf("Lowest Mark: %.1f by %s\n", lowest_mark, lowest_mark_student);
+    printf("--- Summary of Student Records ---\n");
+    printf("%-20s: %d\n", "Total Records", record_count);
+    printf("%-20s: %.1f\n", "Average Mark", average_mark);
+    printf("%-20s: %.1f (by %s)\n", "Highest Mark", highest_mark, highest_mark_student);
+    printf("%-20s: %.1f (by %s)\n", "Lowest Mark", lowest_mark, lowest_mark_student);
+    printf("----------------------------------\n");
 }
