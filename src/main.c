@@ -19,6 +19,7 @@ static void print_menu(void) {
     puts("Type a command from the list below:");
     puts("open  - Open the database");
     puts("show all  - Show all records");
+	puts("show summary  - Show summary statistics");
     puts("query ID=<id>  - Query a record by ID");
     puts("insert - Open insert menu");
     puts("delete ID=<id> - Delete records(s) by ID (with confirmation)");
@@ -149,13 +150,11 @@ int main(void) {
         } 
         else if (strncmp(command, "show all", 8) == 0) {
             action_show_all();
-        }
-        else if (strncmp(command, "query", 5) == 0) {
-            action_query(command);
-        } else if (strncmp(command, "insert", 6) == 0) {
-            action_insert();
-        }
-        else if (strncmp(command, "delete", 6) == 0) {
+		} else if (strncmp(command, "show summary", 12) == 0) {
+            show_summary();
+        } else if (strncmp(command, "query", 5) == 0) {
+            action_query(command); 
+        } else if (strncmp(command, "delete", 6) == 0) {
             action_delete(command);
         }
         else if (strncmp(command, "update", 6) == 0) {
