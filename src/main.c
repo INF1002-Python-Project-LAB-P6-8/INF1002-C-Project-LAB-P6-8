@@ -153,7 +153,9 @@ int main(void) {
 		} else if (strncmp(command, "show summary", 12) == 0) {
             show_summary();
         } else if (strncmp(command, "query", 5) == 0) {
-            action_query(command); 
+            action_query(command);
+        } else if (strncmp(command, "insert", 6) == 0) {
+          action_insert();
         } else if (strncmp(command, "delete", 6) == 0) {
             action_delete(command);
         }
