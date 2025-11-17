@@ -6,7 +6,7 @@
 #include "crud.h"
 #include "config.h"
 #define DEBUG_MODE 1
-#define RETURNCODE unsigned long
+#define RETURNCODE signed long
 
 #ifdef DEBUG_MODE
 void debug(char *_msg) {
@@ -33,11 +33,35 @@ void debug(char _msg) {}
   - Get/Update Database name
  */
 
+typedef struct TargetValue {
+  char *target;
+  void *value;
+  size_t container_size;
+} TargetValue;
+
+typedef enum _DataType {
+  INT32,
+  FLOAT,
+  STRING_ASCII,
+} DataType;
+
+typedef struct _Column {
+  char *name;
+  DataType data_type;
+  size_t data_type_size;
+} Column;
+
+typedef struct _Table {
+  char *name;
+  Column *columns;
+  size_t column_count;
+} Table;
+
 RETURNCODE find_record_by_id(Record *records,
                              size_t record_count,
                              int id,
                              Record **filtered_record) {
-  for (int i = 0; i < record_count; i++) {
+  for (size_t i = 0; i < record_count; i++) {
     if (records[i].id == id) {
       *filtered_record = &records[i];
       return 0;
@@ -65,7 +89,8 @@ RETURNCODE find_record(void *records,
 
 RETURNCODE update_record(void *record,
                          size_t target_offset,
-                         void* value,
+                         void *value,
+                         DataType datatype,
                          size_t container_size) {
   printf("\nupdate_record called!,"
          "\n\trecord name: %s"
@@ -76,12 +101,9 @@ RETURNCODE update_record(void *record,
          ((Record *)record)->name, target_offset, (char *)value, container_size);
   size_t value_size = sizeof(value);
   size_t copy_size = value_size > container_size ? container_size : value_size;
-  //printf("\n\toffsetof recalced: %lu", offsetof(Record, name));
-  //printf("\n\trecord name offset-based: %s", (char *)record + offsetof(Record, name));
-  //printf("\n\tcopy_size: %lu", copy_size);
-  //printf("\n\trecord+target_offset (OLD): %s", (char *)record + target_offset);
   memcpy((char *)record + target_offset, value, copy_size);
-  //printf("\n\trecord+target_offset (NEW): %s", (char *)record + target_offset);
+  if (datatype == STRING_ASCII)
+    *((char *)record + target_offset + container_size - 1) = '\0';
   return 0;
 }
 
@@ -94,6 +116,7 @@ RETURNCODE update_record_by_id(Record *records,
                                int id,
                                size_t target_offset,
                                void* value,
+                               DataType datatype,
                                size_t container_size) {
   Record *filtered_record;
   if (find_record_by_id(records,
@@ -107,32 +130,9 @@ RETURNCODE update_record_by_id(Record *records,
   return update_record(filtered_record,
                        target_offset,
                        value,
+                       datatype,
                        container_size) << 4;
 }
-
-typedef struct TargetValue {
-  char *target;
-  void *value;
-  size_t container_size;
-} TargetValue;
-
-typedef enum _DataType {
-  INT32,
-  FLOAT,
-  STRING,
-} DataType;
-
-typedef struct _Column {
-  char *name;
-  DataType data_type;
-  size_t data_type_size;
-} Column;
-
-typedef struct _Table {
-  char *name;
-  Column *columns;
-  size_t column_count;
-} Table;
 
 static inline RETURNCODE parse_command(char *command,
                                        char **_action,
@@ -150,10 +150,9 @@ static inline RETURNCODE parse_command(char *command,
   char *filter_value = strtok(NULL, " ");
   char *target_column = strtok(NULL, "=");
   char *target_value = strtok(NULL, "=");
-  size_t target_column_compare_length = strlen(target_column) < sizeof("ID") ? strlen(target_column) : sizeof("ID");
-  if (!filter_column || !filter_value || !target_column || !target_value)
+  if (!filter_column ||!filter_value || !target_column || !target_value)
     return -1;
-  if (!strncmp(target_column, "ID", target_column_compare_length))
+  if (!strncmp(target_column, "ID", sizeof("ID")))
     return -2;
 
   *_action = action;
@@ -162,25 +161,52 @@ static inline RETURNCODE parse_command(char *command,
   *_target_column = target_column;
   *_target_value = target_value;
   return 0;
-  
-  //if(sscanf(command, "update ID=%d", id) == 1) {
-  //  return 0;
-  //}
-  //return -1;
 }
+
+/*
+static inline RETURNCODE cmsv1store2metacontainer(Record *records,
+                                                  size_t record_count) {
+  Table *table = malloc(sizeof(Table));
+  table->columns = malloc(sizeof(Column) * 4);
+  table->columns[0].name = "ID";
+  table->columns[0].data_type = INT32;
+  table->columns[1].name = "NAME";
+  table->columns[1].data_type = STRING_ASCII;
+  table->columns[1].data_type_size = 64;
+  table->columns[2].name = "PROGRAMME";
+  table->columns[2].data_type = STRING_ASCII;
+  table->columns[2].data_type_size = 64;
+  table->columns[3].name = "MARK";
+  table->columns[3].data_type = FLOAT;
+  for (size_t i = 0; i < record_count; i++) {
+  }
+  return -1;
+}
+*/
 
 /*
   memory-format: CMSv1Store
  */
-static inline RETURNCODE get_container_offset_size(char *target_column,
-                                                   size_t *offset,
-                                                   size_t *size) {
-  if (strncmp(target_column, "NAME", 4) == 0) {
+static inline RETURNCODE get_container_details(char *target_column,
+                                               size_t *offset,
+                                               size_t *size,
+                                               DataType *datatype) {
+  if (strncmp(target_column, "ID", sizeof("ID")) == 0) {
+    *offset = offsetof(Record, id);
+    *size = sizeof((Record){}.id);
+    *datatype = INT32;
+  } else if (strncmp(target_column, "NAME", sizeof("NAME")) == 0) {
     *offset = offsetof(Record, name);
     *size = sizeof((Record){}.name);
-  } else if (strncmp(target_column, "MARK", 4) == 0) {
+    *datatype = STRING_ASCII;
+  } else if (strncmp(target_column, "PROGRAMME", sizeof("PROGRAMME")) == 0) {
+    *offset = offsetof(Record, programme);
+    *size = sizeof((Record){}.programme);
+    *datatype = STRING_ASCII;
+  } else if (strncmp(target_column, "MARK", sizeof("MARK")) == 0) {
     *offset = offsetof(Record, mark);
     *size = sizeof((Record){}.mark);
+    *datatype = FLOAT;
   } else {
     return -1;
   }
@@ -197,6 +223,7 @@ RETURNCODE action_update(Record *records,
   char *target_value;
   size_t offset;
   size_t container_size;
+  DataType datatype;
   int id;
   if (parse_command(command,
                     &action,
@@ -210,11 +237,12 @@ RETURNCODE action_update(Record *records,
   for (size_t i = 0; i < strlen(target_column); i++) {
     target_column[i] = toupper(target_column[i]);
   }
-  get_container_offset_size(target_column, &offset, &container_size);
+  get_container_details(target_column, &offset, &container_size, &datatype);
   return update_record_by_id(records,
                              record_count,
                              id,
                              offset,
                              target_value,
+                             datatype,
                              container_size) << 4;
 }

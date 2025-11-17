@@ -1,2 +1,2 @@
 #!/bin/sh
-gcc $@ -o cms src/*.h src/*.c
+gcc $@ -o cms -Wall -Wextra src/*.h src/*.c
