@@ -10,7 +10,7 @@ typedef struct {
 } Record;
 
 // Function declarations
-int open_database(const char *folder, const char *filename);
+int open_database(const char* filepath);
 void show_all_records(void);
 void query_record(const char *command);     // Accept full query command as a string
 int delete_record_by_id(int id); // Delete by student ID
@@ -20,15 +20,18 @@ void free_records(void);
 
 int insert_record(char* input); // Insert function
 
-int id_check(int input);
-int name_check(char* input);
+int id_check(char* input);
+int special_and_number_check(char* input, char* field);
 int mark_check(char* input);
-int prog_check(char* input);
+int special_check(char* input, char* field);
 
 void normalise_spaces(char* input);
 void remove_spaces(char* input);
 
-int save_table(const char *filename); // Save function
+
+int create_database(char* input);
+
+int save_table(void); // Save function
 
 void get_record_refs(Record **records_out, int *record_count_out);
 #endif // CRUD_H
