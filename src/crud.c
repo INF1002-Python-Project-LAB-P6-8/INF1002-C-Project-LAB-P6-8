@@ -567,7 +567,7 @@ int id_check(char* input) {
         return 1;
     }
 
-    for (int i = 0; i < len; i++) {
+    for (size_t i = 0; i < len; i++) {
         char c = input[i];
 
         if (!isdigit((unsigned char)c)) {
@@ -593,7 +593,7 @@ int mark_check(char* input) {
         return 1;
     }
 
-    for (int i = 0; i < len; i++) {
+    for (size_t i = 0; i < len; i++) {
         char c = input[i];
 
         if (c == '.') {
@@ -899,3 +899,4 @@ int create_database(char* input) {
     printf("Successfully created database: %s.txt\n", filename);
     return 0;
 }
+
