@@ -22,6 +22,7 @@ static void print_menu(void) {
 	puts("show summary  - Show summary statistics");
     puts("query ID=<id>  - Query a record by ID");
     puts("insert - Open insert menu");
+	puts("create - Create database menu");
     puts("delete ID=<id> - Delete records(s) by ID (with confirmation)");
     puts("update <find_column>=<find_value> <update_column>=<new_value> - Update record");
     puts("save - save changes to the database");
@@ -30,17 +31,23 @@ static void print_menu(void) {
 }
 
 // Action to open the database
-static void action_open(void) {
-    const char *folder = "data";
-    const char *filename = "P6-8-CMS.txt"; // Update filename to match expected output
+static void action_open(char* command) {
     free_records(); // Free previously loaded records
 
-    if (open_database(folder, filename) == 0) {
-        printf("OPEN\n");
-        printf("The database file \"%s\" is successfully opened.\n", filename);
-    } else {
-        printf("Failed to open the database file \"%s\".\n", filename);
+    char filename[512];
+    if (sscanf(command, "open=%255[^\n]", &filename) == 1) {
+        if (open_database(filename) == 0) {
+            printf("OPEN\n");
+            printf("The database file \"%s\" is successfully opened.\n", filename);
+        }
+        else {
+            printf("Failed to open the database file \"%s\".\n", filename);
+        }
     }
+    else {
+        printf("Invalid query format. Use: open=<filepath>\n");
+    }
+
 }
 
 // Action to show all records
@@ -99,8 +106,7 @@ static void action_delete(char *command) {
 
 //Action to save the changes to the database
 static void action_save(void) {
-    const char* filename = "C:\\Users\\Wing3\\Desktop\\y1t1\\programming\\C\\C project\\main\\x64\\Debug\\P6-8-CMS.txt"; // Update filename to match expected output
-    if (save_table(filename) == 0) {
+    if (save_table() == 0) {
         printf("\nDatabase successfully updated\n");
     }
     else {
@@ -115,18 +121,66 @@ static void action_insert(void) {
 
         puts("\n--- CMS insert ---");
         puts("To insert into the database please follow the format:");
-        puts("ID=<ID of student> Name=<Name of student> Programme=<Programme the student is enrolled in> Mark=<Their grade>");
+        puts("INSERT ID=<ID of student> Name=<Name of student> Programme=<Programme the student is enrolled in> Mark=<Their grade>");
         puts("EXAMPLE: INSERT ID=2401234 Name=Michelle Lee Programme=Information Security Mark=73.2");
         puts("To go back, enter back");
         printf(">>>");
 
         read_command(command, sizeof(command));
 
+        //tackles stack overflow
+        size_t len = strlen(command);
+        if (len == sizeof(command) - 1 && command[len - 1] != '\n') {
+            printf("\nError: Input line too long (exceeds %d characters)\n", (int)sizeof(command) - 1);
+
+            int c;
+            while ((c = getchar()) != '\n' && c != EOF);
+
+            continue;  
+        }
+
+
         if (strncmp(command, "back", 4) == 0) {
             break;
         }
         if (insert_record(command) == 0) {
             printf("New changes added to the table\n");
+
+        }
+
+    }
+}
+
+static void action_create(void) {
+    while (1) {
+        char command[255];
+
+        puts("\n--- CMS create ---");
+        puts("To create a new database file please follow the format:");
+        puts("CREATE Database=<Name of database> Authors=<Name of Authors> Table=<Name of table>");
+        puts("EXAMPLE: CREATE Database=P12-9 Authors=Jane To Table=<Name of table>");
+        puts("To go back, enter back");
+        printf(">>>");
+
+        read_command(command, sizeof(command));
+
+        //tackles stack overflow
+        size_t len = strlen(command);
+        if (len == sizeof(command) - 1 && command[len - 1] != '\n') {
+            printf("\nError: Input line too long (exceeds %d characters)\n", (int)sizeof(command) - 1);
+
+            int c;
+            while ((c = getchar()) != '\n' && c != EOF);
+
+            continue;
+        }
+
+
+        if (strncmp(command, "back", 4) == 0) {
+            break;
+        }
+        if (create_database(command) == 0) {
+            printf("New databsae created\n");
 
         }
 
@@ -142,24 +196,31 @@ int main(void) {
 
     while (1) {
         print_menu();
-        char command[64];
+        char command[255];
         read_command(command, sizeof(command));
 
         if (strncmp(command, "open", 4) == 0) {
-            action_open();
+            action_open(command);
         } 
         else if (strncmp(command, "show all", 8) == 0) {
             action_show_all();
-		} else if (strncmp(command, "show summary", 12) == 0) {
+		} 
+		else if (strncmp(command, "show summary", 12) == 0) {
             show_summary();
-        } else if (strncmp(command, "query", 5) == 0) {
+        } 
+		else if (strncmp(command, "query", 5) == 0) {
             action_query(command);
-        } else if (strncmp(command, "insert", 6) == 0) {
+        } 
+		else if (strncmp(command, "insert", 6) == 0) {
           action_insert();
-        } else if (strncmp(command, "delete", 6) == 0) {
+		}
+		else if (strncmp(command, "create", 6) == 0) {
+    		action_create();
+        } 
+		else if (strncmp(command, "delete", 6) == 0) {
             action_delete(command);
         }
-        else if (strncmp(command, "update", 6) == 0) {
+		else if (strncmp(command, "update", 6) == 0) {
           get_record_refs(&records, &record_count);
           action_update(records, record_count, command);
         }
