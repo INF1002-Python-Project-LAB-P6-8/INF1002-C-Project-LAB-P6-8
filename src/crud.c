@@ -106,68 +106,74 @@ void show_all_records(void) {
     }
 }
 
-// Query a record based on the student ID
+// Helper: trim leading/trailing spaces 
+static void trim_spaces(char *str) {
+    int start = 0, end = strlen(str) - 1;
+
+    while (isspace((unsigned char)str[start])) start++;
+    while (end >= start && isspace((unsigned char)str[end])) end--;
+
+    for (int i = start; i <= end; i++)
+        str[i - start] = str[i];
+
+    str[end - start + 1] = '\0';
+}
+
+// Helper: normalize multiple spaces to single 
+static void normalize_spaces_query(char *str) {
+    int i = 0, j = 0;
+    while (str[i]) {
+        if (isspace((unsigned char)str[i])) {
+            if (j > 0 && !isspace((unsigned char)str[j - 1]))
+                str[j++] = ' ';
+        } else {
+            str[j++] = str[i];
+        }
+        i++;
+    }
+    str[j] = '\0';
+}
+
+// Helper: case-insensitive substring search
+static int contains_case_insensitive(const char *haystack, const char *needle) {
+    char h[128], n[64];
+    int i = 0;
+
+    // lowercase haystack
+    while (haystack[i] && i < 127) {
+        h[i] = tolower((unsigned char)haystack[i]);
+        i++;
+    }
+    h[i] = '\0';
+
+    // lowercase needle
+    i = 0;
+    while (needle[i] && i < 63) {
+        n[i] = tolower((unsigned char)needle[i]);
+        i++;
+    }
+    n[i] = '\0';
+
+    return strstr(h, n) != NULL;
+}
+
+// Query a record based on the db fields
 void query_record(const char *command) {
     bool found = false;
-    int id;
-    char name[64];
-    char programme[64];
-    float mark;
 
-    // Helper: trim leading/trailing spaces 
-    void trim_spaces(char *str) {
-        int start = 0, end = strlen(str) - 1;
-
-        while (isspace((unsigned char)str[start])) start++;
-        while (end >= start && isspace((unsigned char)str[end])) end--;
-
-        for (int i = start; i <= end; i++)
-            str[i - start] = str[i];
-
-        str[end - start + 1] = '\0';
-    }
-
-    // Helper: normalize multiple spaces to single 
-    void normalize_spaces(char *str) {
-        int i = 0, j = 0;
-        while (str[i]) {
-            if (isspace((unsigned char)str[i])) {
-                if (j > 0 && !isspace((unsigned char)str[j - 1]))
-                    str[j++] = ' ';
-            } else {
-                str[j++] = str[i];
-            }
-            i++;
-        }
-        str[j] = '\0';
-    }
-
-    // Helper: case-insensitive substring search
-    char* strcasestr_local(const char *haystack, const char *needle) {
-        char h[128], n[64];
-        int i = 0;
-
-        // lowercase haystack
-        while (haystack[i] && i < 127) {
-            h[i] = tolower(haystack[i]);
-            i++;
-        }
-        h[i] = '\0';
-
-        // lowercase needle
-        i = 0;
-        while (needle[i] && i < 63) {
-            n[i] = tolower(needle[i]);
-            i++;
-        }
-        n[i] = '\0';
-
-        return strstr(h, n);
+    // Create lowercase copy of command for parsing field names
+    char command_lower[256];
+    strncpy(command_lower, command, sizeof(command_lower) - 1);
+    command_lower[sizeof(command_lower) - 1] = '\0';
+    
+    for (int i = 0; command_lower[i]; i++) {
+        command_lower[i] = tolower((unsigned char)command_lower[i]);
     }
 
     //  ID QUERY 
-    if (sscanf(command, "query ID=%d", &id) == 1) {
-
+    if (strncmp(command_lower, "query id=", 9) == 0) {
+        int id = atoi(command + 9);  // Extract from original command
+        
         for (int i = 0; i < record_count; i++) {
             if (records[i].id == id) {
                 if (!found) {
@@ -183,17 +189,29 @@ void query_record(const char *command) {
         }
     }
     //  NAME QUERY 
-    else if (sscanf(command, "query Name=%63[^\n]", name) == 1) {
+    else if (strncmp(command_lower, "query name=", 11) == 0) {
+        char name[64];
+        const char* name_value = command + 11;  // Extract from original command
+        
+        strncpy(name, name_value, sizeof(name) - 1);
+        name[sizeof(name) - 1] = '\0';
+        
         trim_spaces(name);
-        normalize_spaces(name);
+        normalize_spaces_query(name);
+        
+        // Check if name is empty after trimming
+        if (strlen(name) == 0) {
+            printf("Error: Name value cannot be empty\n");
+            return;
+        }
 
         for (int i = 0; i < record_count; i++) {
             char recname[64];
             strcpy(recname, records[i].name);
             trim_spaces(recname);
-            normalize_spaces(recname);
+            normalize_spaces_query(recname);
 
-            if (strcasestr_local(recname, name)) {   // PARTIAL MATCH
+            if (contains_case_insensitive(recname, name)) {
                 if (!found) {
                     printf("Record(s) with Name containing \"%s\" found:\n", name);
                     printf("%-10s %-20s %-25s %-10s\n",
@@ -207,17 +225,29 @@ void query_record(const char *command) {
         }
     }
     // PROGRAMME QUERY 
-    else if (sscanf(command, "query Programme=%63[^\n]", programme) == 1) {
+    else if (strncmp(command_lower, "query programme=", 16) == 0) {
+        char programme[64];
+        const char* prog_value = command + 16;  // Extract from original command
+        
+        strncpy(programme, prog_value, sizeof(programme) - 1);
+        programme[sizeof(programme) - 1] = '\0';
+        
         trim_spaces(programme);
-        normalize_spaces(programme);
+        normalize_spaces_query(programme);
+        
+        // Check if programme is empty after trimming
+        if (strlen(programme) == 0) {
+            printf("Error: Programme value cannot be empty\n");
+            return;
+        }
 
         for (int i = 0; i < record_count; i++) {
             char recprog[64];
             strcpy(recprog, records[i].programme);
             trim_spaces(recprog);
-            normalize_spaces(recprog);
+            normalize_spaces_query(recprog);
 
-            if (strcasestr_local(recprog, programme)) { // PARTIAL MATCH
+            if (contains_case_insensitive(recprog, programme)) {
                 if (!found) {
                     printf("Record(s) with Programme containing \"%s\" found:\n", programme);
                     printf("%-10s %-20s %-25s %-10s\n",
@@ -230,57 +260,55 @@ void query_record(const char *command) {
             }
         }
     }
-
     // MARK QUERY 
-    else if (strncmp(command, "query Mark=", 11) == 0) {
-        char operator[3] = "==";  // Default to exact match
-        float query_mark;
-        const char *mark_str = command + 11;  // Skip "query Mark="
+    else if (strncmp(command_lower, "query mark=", 11) == 0) {
+        char operator[3] = "==";
+        float mark;
+        const char *mark_str = command + 11;  // Extract from original command
         
-        // Check for comparison operators
+        // Parse operator
         if (mark_str[0] == '>') {
             if (mark_str[1] == '=') {
                 strcpy(operator, ">=");
-                query_mark = atof(mark_str + 2);
+                mark = atof(mark_str + 2);
             } else {
                 strcpy(operator, ">");
-                query_mark = atof(mark_str + 1);
+                mark = atof(mark_str + 1);
             }
         } else if (mark_str[0] == '<') {
             if (mark_str[1] == '=') {
                 strcpy(operator, "<=");
-                query_mark = atof(mark_str + 2);
+                mark = atof(mark_str + 2);
             } else {
                 strcpy(operator, "<");
-                query_mark = atof(mark_str + 1);
+                mark = atof(mark_str + 1);
             }
         } else {
-            // No operator, exact match
-            query_mark = atof(mark_str);
+            mark = atof(mark_str);
         }
 
+        // Search records
         for (int i = 0; i < record_count; i++) {
             bool match = false;
             
             if (strcmp(operator, "==") == 0) {
-                // Use epsilon for floating point comparison
-                match = (fabs(records[i].mark - query_mark) < 0.01);
+                match = (fabs(records[i].mark - mark) < 0.01);
             } else if (strcmp(operator, ">") == 0) {
-                match = (records[i].mark > query_mark);
+                match = (records[i].mark > mark);
             } else if (strcmp(operator, ">=") == 0) {
-                match = (records[i].mark >= query_mark);
+                match = (records[i].mark >= mark);
             } else if (strcmp(operator, "<") == 0) {
-                match = (records[i].mark < query_mark);
+                match = (records[i].mark < mark);
             } else if (strcmp(operator, "<=") == 0) {
-                match = (records[i].mark <= query_mark);
+                match = (records[i].mark <= mark);
             }
             
             if (match) {
                 if (!found) {
                     if (strcmp(operator, "==") == 0) {
-                        printf("Record(s) with Mark=%.1f found:\n", query_mark);
+                        printf("Record(s) with Mark=%.1f found:\n", mark);
                     } else {
-                        printf("Record(s) with Mark%s%.1f found:\n", operator, query_mark);
+                        printf("Record(s) with Mark%s%.1f found:\n", operator, mark);
                     }
                     printf("%-10s %-20s %-25s %-10s\n",
                         "ID", "Name", "Programme", "Mark");
@@ -291,6 +319,10 @@ void query_record(const char *command) {
                 found = true;
             }
         }
+    }
+    else {
+        printf("Error: Invalid query format. Use 'query <field>=<value>'\n");
+        return;
     }
 
     if (!found) {

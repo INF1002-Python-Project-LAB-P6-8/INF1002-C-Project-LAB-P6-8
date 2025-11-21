@@ -35,7 +35,7 @@ static void action_open(char* command) {
     free_records(); // Free previously loaded records
 
     char filename[512];
-    if (sscanf(command, "open=%255[^\n]", &filename) == 1) {
+    if (sscanf(command, "open=%255[^\n]", filename) == 1) {
         if (open_database(filename) == 0) {
             printf("OPEN\n");
             printf("The database file \"%s\" is successfully opened.\n", filename);
