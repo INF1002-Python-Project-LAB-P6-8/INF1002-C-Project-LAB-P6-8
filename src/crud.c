@@ -11,12 +11,18 @@
 static Record *records = NULL;
 static int record_count = 0;
 
-// Open the database file and load records
-int open_database(const char *folder, const char *filename) {
-    char filepath[256];
-    snprintf(filepath, sizeof(filepath), "%s/%s", folder, filename);
+char global_db_name[64];
+char global_table_name[64];
+char global_filepath[512];
 
-    FILE *file = fopen(filepath, "r");
+
+// Open the database file and load records
+int open_database(const char* filepath) {
+
+    strncpy(global_filepath, filepath, sizeof(global_filepath) - 1);
+    global_filepath[sizeof(global_filepath) - 1] = '\0';
+
+    FILE* file = fopen(filepath, "r");
     if (file == NULL) {
         perror("Error opening file");
         return -1;
@@ -25,11 +31,25 @@ int open_database(const char *folder, const char *filename) {
     char line[256];
     record_count = 0;
     int capacity = 10;
-    records = (Record *)malloc(capacity * sizeof(Record));
+    records = (Record*)malloc(capacity * sizeof(Record));
     if (records == NULL) {
         fclose(file);
         perror("Memory allocation failed");
         return -1;
+    }
+
+    while (fgets(global_db_name, sizeof(global_db_name), file)) {
+        if (strstr(global_db_name, "Database Name:")) {
+            global_db_name[strcspn(global_db_name, "\n")] = '\0';
+            break;
+        }
+    }
+
+    while (fgets(global_table_name, sizeof(global_table_name), file)) {
+        if (strstr(global_table_name, "Table Name:")) {
+            global_table_name[strcspn(global_table_name, "\n")] = '\0';
+            break;
+        }
     }
 
     // Skip metadata lines
@@ -50,7 +70,7 @@ int open_database(const char *folder, const char *filename) {
 
         if (record_count >= capacity) {
             capacity *= 2;
-            Record *temp = (Record *)realloc(records, capacity * sizeof(Record));
+            Record* temp = (Record*)realloc(records, capacity * sizeof(Record));
             if (temp == NULL) {
                 free(records);
                 fclose(file);
@@ -60,9 +80,9 @@ int open_database(const char *folder, const char *filename) {
             records = temp;
         }
 
-        Record *rec = &records[record_count];
+        Record* rec = &records[record_count];
         if (sscanf(line, "%d\t%63[^\t]\t%63[^\t]\t%f",
-                   &rec->id, rec->name, rec->programme, &rec->mark) == 4) {
+            &rec->id, rec->name, rec->programme, &rec->mark) == 4) {
             record_count++;
         }
     }
@@ -320,6 +340,9 @@ void free_records(void) {
 
 //Insert function
 int insert_record(char* input) {
+
+
+
     // Check if it starts with INSERT
     if (strncmp(input, "INSERT ", 7) != 0) {
         printf("\nError: Command must start with INSERT\n");
@@ -334,11 +357,45 @@ int insert_record(char* input) {
 
     // Find ID=
     char* id_pos = strstr(input, "ID=");
-    if (id_pos) {
-        new_record.id = atoi(id_pos + 3);
+    // Find Name=
+    char* name_pos = strstr(input, "Name=");
+    // Find Programme=
+    char* prog_pos = strstr(input, "Programme=");
+    // Find Mark=
+    char* mark_pos = strstr(input, "Mark=");
 
+    int id_found = 0;
+
+    // Extract input ID
+    if (id_pos && name_pos) {
+        id_pos += 3;
+        int length = name_pos - id_pos;
+
+        if (length > 8) {
+            printf("\nError: Field Name Exceeded 7 character limit");
+            return 1;
+        }
+
+     
+        char id_value[64];
+        strncpy(id_value, id_pos, length);
+        id_value[length] = '\0';
+
+        // Trim spaces
+        for (int i = length - 1; i >= 0 && id_value[i] == ' '; i--) {
+            id_value[i] = '\0';
+        }
+
+        if (id_value[0] != '\0') {
+            if (id_check(id_value) == 1) {// ID validation
+                return 1;
+            }
+            new_record.id = atoi(id_value);
+            id_found = 1;
+        }
     }
 
+    // Check for duplicate ID
     for (int i = 0; i < record_count; i++) {
         if (records[i].id == new_record.id) {
             printf("\nDuplicate entry found, try again\n");
@@ -346,13 +403,16 @@ int insert_record(char* input) {
         }
     }
 
-    // Find Name=
-    char* name_pos = strstr(input, "Name=");
-    char* prog_pos = strstr(input, "Programme=");
-
+    // Extract string between Name= and Programme=
     if (name_pos && prog_pos) {
         name_pos += 5;
         int length = prog_pos - name_pos;
+
+        if (length >= 64) {
+            printf("\nError: Field Name Exceeded 64 character limit");
+            return 1;
+        }
+
         strncpy(new_record.name, name_pos, length);
         new_record.name[length] = '\0';
 
@@ -363,10 +423,15 @@ int insert_record(char* input) {
     }
 
     // Extract values between Programme= and Mark=
-    char* mark_pos = strstr(input, "Mark=");
     if (prog_pos && mark_pos) {
         prog_pos += 10;
         int length = mark_pos - prog_pos;
+
+        if (length >= 64) {
+            printf("\nError: Programme Name Exceeded 64 character limit");
+            return 1;
+        }
+
         strncpy(new_record.programme, prog_pos, length);
         new_record.programme[length] = '\0';
 
@@ -376,39 +441,46 @@ int insert_record(char* input) {
         }
     }
 
+    // Extract input Mark
     int mark_found = 0;
-    // Find Mark=
     if (mark_pos) {
-        char* mark_value = mark_pos + 5; 
+        char* mark_value = mark_pos + 5;
+
+        int mark_length = 0;
+        while (mark_value[mark_length] != '\0' &&
+            mark_value[mark_length] != '\n' &&
+            mark_value[mark_length] != '\r') {
+            mark_length++;
+        }
+
+        if (mark_length > 4) {
+            printf("\nError: Mark Name Exceeded 4 character limit");
+            return 1;
+        }
 
         if (mark_value[0] != '\0' && mark_value[0] != '\n') {
-            if (mark_check(mark_value) == 1) { //mark input validation
+            if (mark_check(mark_value) == 1) {
                 return 1;
             }
-
             new_record.mark = atof(mark_value);
             mark_found = 1;
         }
     }
 
-
-    //Validate for any empty fields
-    if (new_record.id == 0 || strlen(new_record.name) == 0 ||
+    // Validate for any empty fields
+    if (id_found == 0 || strlen(new_record.name) == 0 ||
         strlen(new_record.programme) == 0 || mark_found == 0) {
         printf("\nError: Missing required fields\n");
         return 1;
     }
 
-    //id input validation
-    if (id_check(new_record.id) == 1) {
+    // Name input validation
+    if (special_and_number_check(new_record.name, "Name") == 1) {
         return 1;
     }
-    //name input validation
-    if (name_check(new_record.name) == 1) {
-        return 1;
-    }
-    //programme input validation
-    if (prog_check(new_record.programme) == 1) {
+
+    // Programme input validation
+    if (special_check(new_record.programme, "Programme") == 1) {
         return 1;
     }
 
@@ -417,34 +489,16 @@ int insert_record(char* input) {
 
     printf("Successfully inserted: %s (ID: %d)\n", new_record.name, new_record.id);
     return 0;
-
 }
-
-
-
-// ID field input validation
-int id_check(int input) {
-    if (input < 1000000 || input > 9999999) {
-        printf("\nError: ID must contains 7 digits and no special characters\n");
-        return 1;
-    }
-    return 0;
-}
-
 
 
 // Name field input validation
-int name_check(char* input) {
+int special_and_number_check(char* input, char* field) {
     normalise_spaces(input);
 
-    size_t len = strlen(input);
-    if (len == 0 || len >= 64) {
-        printf("\nError: Exceeded 64 character limit");
-        return 1;
-    }
     while (*input) {
         if (!isalpha((unsigned char)*input) && *input != ' ') {
-            printf("\nError: Name should not contain special characters and numbers ");
+            printf("\nError: %s should not contain special characters and numbers", field);
             return 1;
         }
         input++;
@@ -454,16 +508,12 @@ int name_check(char* input) {
 
 
 // Programme field input validation
-int prog_check(char* input) {
+int special_check(char* input, char* field) {
     normalise_spaces(input);
-    size_t len = strlen(input);
-    if (len == 0 || len >= 64) {
-        printf("\nError: Exceeded 64 character limit");
-        return 1;
-    }
+
     while (*input) {
         if (!isalnum((unsigned char)*input) && *input != ' ') {
-            printf("\nError: Programme should not contain special characters");
+            printf("\nError: %s should not contain special characters", field);
             return 1;
         }
         input++;
@@ -473,12 +523,38 @@ int prog_check(char* input) {
 }
 
 
+
+// ID field input validation
+int id_check(char* input) {
+    remove_spaces(input);  // optional if you use this already
+
+    size_t len = strlen(input);
+
+    if (len != 7) {
+        printf("\nError: ID must contain exactly 7 digits\n");
+        return 1;
+    }
+
+    for (int i = 0; i < len; i++) {
+        char c = input[i];
+
+        if (!isdigit((unsigned char)c)) {
+            printf("\nError: ID must contain only digits\n");
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+
+
 // Mark field input validation
 int mark_check(char* input) {
     remove_spaces(input);
     int dot_count = 0;
     int digits_after_dot = 0;
-    int len = strlen(input);
+    size_t len = strlen(input);
 
     if (!isdigit((unsigned char)input[0])) {
         printf("\nError: Mark should only contain 0.0 to 100.0\n");
@@ -492,7 +568,7 @@ int mark_check(char* input) {
             dot_count++;
             if (dot_count > 1) {
                 printf("\nError: Mark should only 1 decimal place\n");
-                return 1; 
+                return 1;
             }
 
             if (i == 0 || i == len - 1) {
@@ -569,9 +645,9 @@ void remove_spaces(char* input) {
 
 
 // save table to database function
-int save_table(const char* filename) {
-
-    FILE* file = fopen(filename, "r");
+int save_table(void) {
+    
+    FILE* file = fopen(global_filepath, "r");
     if (file == NULL) {
         perror("Error opening file");
         return -1;
@@ -601,7 +677,7 @@ int save_table(const char* filename) {
     }
 
     // Reopen file in write mode to overwrite
-    file = fopen(filename, "w");
+    file = fopen(global_filepath, "w");
     if (!file) {
         perror("Failed to open file for writing");
         return 1;
@@ -662,4 +738,132 @@ void show_summary(void) {
     printf("%-20s: %.1f (by %s)\n", "Highest Mark", highest_mark, highest_mark_student);
     printf("%-20s: %.1f (by %s)\n", "Lowest Mark", lowest_mark, lowest_mark_student);
     printf("----------------------------------\n");
+}
+
+int create_database(char* input) {
+    // Check if it starts with CREATE
+    if (strncmp(input, "CREATE ", 7) != 0) {
+        printf("\nError: Command must start with CREATE\n");
+        return 1;
+    }
+
+    char database_name[64] = "";
+    char authors[64] = "";
+    char table_name[64] = "";
+
+    // Find Database=
+    char* db_pos = strstr(input, "Database=");
+    // Find Authors=
+    char* auth_pos = strstr(input, "Authors=");
+    // Find Table=
+    char* table_pos = strstr(input, "Table=");
+
+    // Extract Database name
+    if (db_pos && auth_pos) {
+        db_pos += 9;
+        int length = auth_pos - db_pos;
+
+        if (length >= 64) {
+            printf("\nError: Database name exceeds 64 character limit\n");
+            return 1;
+        }
+
+        strncpy(database_name, db_pos, length);
+        database_name[length] = '\0';
+
+        // Trim spaces
+        for (int i = length - 1; i >= 0 && database_name[i] == ' '; i--) {
+            database_name[i] = '\0';
+        }
+    }
+
+    // Extract Authors name
+    if (auth_pos && table_pos) {
+        auth_pos += 8;
+        int length = table_pos - auth_pos;
+
+        if (length >= 64) {
+            printf("\nError: Authors name exceeds 64 character limit\n");
+            return 1;
+        }
+
+        strncpy(authors, auth_pos, length);
+        authors[length] = '\0';
+
+        // Trim spaces
+        for (int i = length - 1; i >= 0 && authors[i] == ' '; i--) {
+            authors[i] = '\0';
+        }
+    }
+
+    // Extract Table name
+    if (table_pos) {
+        table_pos += 6;
+
+        int length = 0;
+        while (table_pos[length] != '\0' &&
+            table_pos[length] != '\n' &&
+            table_pos[length] != '\r') {
+            length++;
+        }
+
+        if (length >= 64) {
+            printf("\nError: Table name exceeds 64 character limit\n");
+            return 1;
+        }
+
+        strncpy(table_name, table_pos, length);
+        table_name[length] = '\0';
+
+        // Trim spaces
+        for (int i = length - 1; i >= 0 && table_name[i] == ' '; i--) {
+            table_name[i] = '\0';
+        }
+    }
+
+    // Validate for any empty fields - CLEANER VERSION
+    if (strlen(database_name) == 0 || strlen(authors) == 0 || strlen(table_name) == 0) {
+        printf("\nError: Missing required fields (Database, Authors, or Table)\n");
+        return 1;
+    }
+
+
+    // Name input validation
+    if (special_check(table_name, "Table") == 1) {
+        return 1;
+    }
+
+    // Programme input validation
+    if (special_and_number_check(authors, "Authors") == 1) {
+        return 1;
+    }
+
+    // Create filename from database name
+    char filename[128];
+    snprintf(filename, sizeof(filename), "%s.txt", database_name);
+
+    // Check if file already exists
+    FILE* check = fopen(filename, "r");
+    if (check != NULL) {
+        fclose(check);
+        printf("\nError: Database '%s' already exists\n", database_name);
+        return 1;
+    }
+
+    // Create the file and write header
+    FILE* file = fopen(filename, "w");
+    if (file == NULL) {
+        perror("Error creating database file");
+        return 1;
+    }
+
+    fprintf(file, "Database Name: %s\n", database_name);
+    fprintf(file, "Authors: %s\n", authors);
+    fprintf(file, "\nTable Name: %s\n", table_name);
+    fprintf(file, "ID\tName\t\tProgramme\t\tMark\n");
+
+    fclose(file);
+
+    printf("Successfully created database: %s.txt\n", filename);
+    return 0;
 }
