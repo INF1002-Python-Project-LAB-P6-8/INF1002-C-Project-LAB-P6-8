@@ -678,6 +678,7 @@ int mark_check(char* input) {
     - removes all forms of whitespace char
     - checks if input is only 0.0 to 100.0
     - no letter chars
+    - makes sure mark only has 1 deciaml point
 
     Parameters
     ----------
@@ -694,56 +695,34 @@ int mark_check(char* input) {
 
     // removes whitespaces
     remove_spaces(input);
-
-
-    int dot_count = 0;
-    int digits_after_dot = 0;
     size_t len = strlen(input);
+    int dot_pos = -1;
 
-    // Checks for non-digit char
-    if (!isdigit((unsigned char)input[0])) {
-        printf("\nError: Mark should only contain 0.0 to 100.0\n");
+    // Find decimal point position and validate characters
+    for (size_t i = 0; i < len; i++) {
+        if (input[i] == '.') {
+            if (dot_pos != -1) { 
+                printf("\nError: Mark must have exactly 1 decimal place\n");
+                return 1;
+            }
+            dot_pos = i;
+        }
+        else if (!isdigit((unsigned char)input[i])) {
+            printf("\nError: Mark should only contain digits and 1 decimal place\n");
+            return 1;
+        }
+    }
+
+    // Check if have exactly 1 decimal with 1 digit after it
+    if (dot_pos == -1 || dot_pos == 0 || dot_pos != len - 2) {
+        printf("\nError: Mark must be in format X.Y (i.e 73.2)\n");
         return 1;
     }
 
-    // loops through the string for checks
-    for (size_t i = 0; i < len; i++) {
-        char c = input[i];
-
-        // checks if there is only 1 decimal place
-        if (c == '.') {
-            dot_count++;
-            if (dot_count > 1) {
-                printf("\nError: Mark should only 1 decimal place\n");
-                return 1;
-            }
-
-            // checks if string starts or end with .
-            if (i == 0 || i == len - 1) {
-                printf("\nError: Mark should not start or end with a decimal point\n");
-                return 1;
-            }
-        }
-
-        // checks for special char
-        else if (!isdigit((unsigned char)c)) {
-            printf("\nError: Mark should not have special characters\n");
-            return 1;
-        }
-        else if (dot_count == 1) {
-            digits_after_dot++;
-            // checks if string starts or end with .
-            if (digits_after_dot > 1) {
-                printf("\nError: Mark should not start or end with a decimal point\n");
-                return 1;
-            }
-        }
-    }
-
-    //checks if number is lower or higher than 0 and 100
+    // Check range 0.0 to 100.0
     double value = atof(input);
     if (value < 0.0 || value > 100.0) {
-        printf("\nError: Mark should only contain 0.0 to 100.0\n");
+        printf("\nError: Mark must be between 0.0 and 100.0\n");
         return 1;
     }
     return 0;
@@ -1154,3 +1133,4 @@ int create_database(char* input) {
     printf("Successfully created database: %s.txt\n", filename);
     return 0;
 }
+
