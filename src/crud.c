@@ -372,15 +372,40 @@ void free_records(void) {
 
 //Insert function
 int insert_record(char* input) {
+    /*
+    The main function for insert major operations
+    - checks if the input command starts with INSERT
+    - creates a new typedef struct array to store the variables with placeholder values
+    - identify headers: ID=, Name=, Programme=, Mark= and extracts out the data between them and store them
+    in the new typedef struct array
+    - checks if all variables are not holding placeholder values else return error messaage
+    - normalise text and remove unncessary white spaces in the variables
+    - calls validation functions:
+        - ID: only 7 digits, no letters and special char
+        - Name: only letters are allowed, no special char or numbers, char limit of 64
+        - Programme: Only letters and numbers, no special char, char limit of 64
+        - Mark: only numbers ranging from 0.0 to 100.0, no special char or letters
+    - if all validation passes, append variables to typedef struct array else reject input
+     
+    Parameters
+    ----------
+    input: string
+        the input insert command typed in by the user
 
-
-
+    Returns
+    -------
+    int: 1 or 0
+        returns 1 if an error is detected
+        returns 0 if the operation is successful
+    */
+	
     // Check if it starts with INSERT
     if (strncmp(input, "INSERT ", 7) != 0) {
         printf("\nError: Command must start with INSERT\n");
         return 1;
     }
 
+	// Creates new typedef struct variable with placeholder values
     Record new_record;
     new_record.id = 0;
     new_record.mark = -1.0f;
@@ -398,7 +423,7 @@ int insert_record(char* input) {
 
     int id_found = 0;
 
-    // Extract input ID
+    // Extract input ID from between ID= and Name=
     if (id_pos && name_pos) {
         id_pos += 3;
         int length = name_pos - id_pos;
@@ -491,7 +516,7 @@ int insert_record(char* input) {
         }
 
         if (mark_value[0] != '\0' && mark_value[0] != '\n') {
-            if (mark_check(mark_value) == 1) {
+            if (mark_check(mark_value) == 1) { //mark validation
                 return 1;
             }
             new_record.mark = atof(mark_value);
@@ -499,7 +524,7 @@ int insert_record(char* input) {
         }
     }
 
-    // Validate for any empty fields
+    // Validate for any empty fields against placeholder values
     if (id_found == 0 || strlen(new_record.name) == 0 ||
         strlen(new_record.programme) == 0 || mark_found == 0) {
         printf("\nError: Missing required fields\n");
@@ -516,6 +541,7 @@ int insert_record(char* input) {
         return 1;
     }
 
+	//appends records to typedef struct array 
     records[record_count] = new_record;
     (record_count)++;
 
@@ -524,10 +550,36 @@ int insert_record(char* input) {
 }
 
 
-// Name field input validation
+// special char and number input validation
 int special_and_number_check(char* input, char* field) {
-    normalise_spaces(input);
+    /*
+    function to check for special char and numbers
+    - normalises text by removing leading and trailing spaces
+        - convert all types of white spaces into a singel space
+        - keeps words separated by only 1 space
+    - checks for special char and numbers
+    - prints out error message if validation fails
 
+    Parameters
+    ----------
+    input: string
+        the variable for validation
+
+    field: string
+        the name of the field being passed in for validation
+
+    Returns
+    -------
+    int: 1 or 0
+        returns 1 if an error is detected
+        returns 0 if the operation is successful
+
+    */
+
+	// normalises input
+    normalise_spaces(input);
+	
+	// loops through each character detect any non letters char
     while (*input) {
         if (!isalpha((unsigned char)*input) && *input != ' ') {
             printf("\nError: %s should not contain special characters and numbers", field);
@@ -538,11 +590,36 @@ int special_and_number_check(char* input, char* field) {
     return 0;
 }
 
-
-// Programme field input validation
+// special char validation
 int special_check(char* input, char* field) {
-    normalise_spaces(input);
+    /*
+    function to check for special char
+    - normalises text by removing leading and trailing spaces
+        - convert all types of white spaces into a singel space
+        - keeps words separated by only 1 space
+    - checks for special char
+    - prints out error message if validation fails
 
+    Parameters
+    ----------
+    input: string
+        the variable for validation
+
+    field: string
+        the name of the field being passed in for validation
+
+    Returns
+    -------
+    int: 1 or 0
+        returns 1 if an error is detected
+        returns 0 if the operation is successful
+
+    */
+
+    // normalises input
+    normalise_spaces(input);
+	
+    // loops through each character detect any special char
     while (*input) {
         if (!isalnum((unsigned char)*input) && *input != ' ') {
             printf("\nError: %s should not contain special characters", field);
@@ -550,52 +627,90 @@ int special_check(char* input, char* field) {
         }
         input++;
     }
-
     return 0;
 }
 
-
-
 // ID field input validation
 int id_check(char* input) {
-    remove_spaces(input);  // optional if you use this already
+    /*
+    function to validate ID
+    - removes all forms of whitespace char
+    - checks if input is only 7 digits
 
+    Parameters
+    ----------
+    input: string
+        the variable for validation
+
+    Returns
+    -------
+    int: 1 or 0
+        returns 1 if an error is detected
+        returns 0 if the operation is successful
+
+    */
+
+    // removes whitespaces	
+    remove_spaces(input);  
+
+	// Checks if length is not 7
     size_t len = strlen(input);
-
     if (len != 7) {
         printf("\nError: ID must contain exactly 7 digits\n");
         return 1;
     }
 
+	// Checks for only digits 
     for (size_t i = 0; i < len; i++) {
         char c = input[i];
-
         if (!isdigit((unsigned char)c)) {
             printf("\nError: ID must contain only digits\n");
             return 1;
         }
     }
-
     return 0;
 }
 
-
-
 // Mark field input validation
 int mark_check(char* input) {
+    /*
+    function to validate Mark
+    - removes all forms of whitespace char
+    - checks if input is only 0.0 to 100.0
+    - no letter chars
+
+    Parameters
+    ----------
+    input: string
+        the variable for validation
+
+    Returns
+    -------
+    int: 1 or 0
+        returns 1 if an error is detected
+        returns 0 if the operation is successful
+
+    */
+
+    // removes whitespaces
     remove_spaces(input);
+
+
     int dot_count = 0;
     int digits_after_dot = 0;
     size_t len = strlen(input);
 
+    // Checks for non-digit char
     if (!isdigit((unsigned char)input[0])) {
         printf("\nError: Mark should only contain 0.0 to 100.0\n");
         return 1;
     }
 
+    // loops through the string for checks
     for (size_t i = 0; i < len; i++) {
         char c = input[i];
 
+        // checks if there is only 1 decimal place
         if (c == '.') {
             dot_count++;
             if (dot_count > 1) {
@@ -603,23 +718,29 @@ int mark_check(char* input) {
                 return 1;
             }
 
+            // checks if string starts or end with .
             if (i == 0 || i == len - 1) {
                 printf("\nError: Mark should not start or end with a decimal point\n");
                 return 1;
             }
         }
+
+        // checks for special char
         else if (!isdigit((unsigned char)c)) {
             printf("\nError: Mark should not have special characters\n");
             return 1;
         }
         else if (dot_count == 1) {
             digits_after_dot++;
+            // checks if string starts or end with .
             if (digits_after_dot > 1) {
                 printf("\nError: Mark should not start or end with a decimal point\n");
                 return 1;
             }
         }
     }
+
+    //checks if number is lower or higher than 0 and 100
     double value = atof(input);
     if (value < 0.0 || value > 100.0) {
         printf("\nError: Mark should only contain 0.0 to 100.0\n");
@@ -628,13 +749,26 @@ int mark_check(char* input) {
     return 0;
 }
 
-
-
-// TEXT FILTERING 
+// function for normalising text
 void normalise_spaces(char* input) {
+    /*
+    - normalises text by removing leading and trailing spaces
+        - convert all types of white spaces into a singel space
+        - keeps words separated by only 1 space
+
+
+    Parameters
+    ----------
+    input: string
+        the variable for text normalisation
+
+    Returns
+    -------
+    void
+    */
+	
     char* src = input;
     char* dst = input;
-
     while (isspace((unsigned char)*src)) {
         src++;
     }
@@ -660,25 +794,54 @@ void normalise_spaces(char* input) {
     *dst = '\0';
 }
 
-
+// function for removing white char
 void remove_spaces(char* input) {
+    /*
+    - removes all forms of whitespace char
+	
+    Parameters
+    ----------
+    input: string
+        the variable for removing white char
+
+    Returns
+    -------
+    void
+
+*/
     char* src = input;
     char* dst = input;
 
     while (*src) {
         if (!isspace((unsigned char)*src)) {
-            *dst++ = *src;  // copy non-space character
+            *dst++ = *src;  
         }
         src++;
     }
-
-    *dst = '\0';  // null-terminate the result
+    *dst = '\0'; 
 }
 
 
 // save table to database function
 int save_table(void) {
-    
+    /*
+    The main function for saving table to the database function
+    - opens the file, reads it and copies the metadata into a variable
+    - close the file and open it in write mode
+    - populate the metadata onto the file
+    - loops through the typedef struct array and populate it with the current array
+        
+    Parameters
+    ----------
+    void
+
+    Returns
+    -------
+    int: 1 or 0
+        returns 1 if an error is detected
+        returns 0 if the operation is successful
+    */    
+	
     FILE* file = fopen(global_filepath, "r");
     if (file == NULL) {
         perror("Error opening file");
@@ -726,7 +889,6 @@ int save_table(void) {
             records[i].programme,
             records[i].mark);
     }
-
     fclose(file);
     return 0;
 }
@@ -814,13 +976,43 @@ void show_summary(void) {
     printf("----------------------------------\n");
 }
 
+// function to create a new database
 int create_database(char* input) {
+    /*
+    The main function for creating a new database enhancement operations
+    - checks if the input command starts with CREATE
+    - creates variables with placeholder values
+    - identify headers: Database=, Authors=, Table= and extracts out the data between them and store them in
+      the variables
+    - checks if all variables are not holding placeholder values else return error messaage
+    - normalise text and remove unncessary white spaces in the variables
+    - calls validation functions:
+        - Database: char limit of 64
+        - Authors: only letters are allowed, no special char or numbers, char limit of 64
+        - Table: Only letters and numbers, no special char, char limit of 64
+    - if all validation passes, a new txt file is created and metadata along with ID, Name, Programme, Mark headers
+      are written into a new file
+
+    Parameters
+    ----------
+    input: string
+        the input insert command typed in by the user
+
+    Returns
+    -------
+    int: 1 or 0
+        returns 1 if an error is detected
+        returns 0 if the operation is successful
+
+    */
+
     // Check if it starts with CREATE
     if (strncmp(input, "CREATE ", 7) != 0) {
         printf("\nError: Command must start with CREATE\n");
         return 1;
     }
 
+    // variables with placeholder values
     char database_name[64] = "";
     char authors[64] = "";
     char table_name[64] = "";
@@ -895,12 +1087,11 @@ int create_database(char* input) {
         }
     }
 
-    // Validate for any empty fields - CLEANER VERSION
+    // Validate for any empty fields
     if (strlen(database_name) == 0 || strlen(authors) == 0 || strlen(table_name) == 0) {
         printf("\nError: Missing required fields (Database, Authors, or Table)\n");
         return 1;
     }
-
 
     // Name input validation
     if (special_check(table_name, "Table") == 1) {
@@ -931,6 +1122,7 @@ int create_database(char* input) {
         return 1;
     }
 
+    // Populate file with metadata and headers
     fprintf(file, "Database Name: %s\n", database_name);
     fprintf(file, "Authors: %s\n", authors);
     fprintf(file, "\nTable Name: %s\n", table_name);
@@ -941,4 +1133,3 @@ int create_database(char* input) {
     printf("Successfully created database: %s.txt\n", filename);
     return 0;
 }
-
