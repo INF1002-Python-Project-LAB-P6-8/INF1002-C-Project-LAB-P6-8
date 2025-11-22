@@ -19,6 +19,10 @@ static void print_menu(void) {
     puts("Type a command from the list below:");
     puts("open  - Open the database");
     puts("show all  - Show all records");
+    puts("show all sort by id asc - Show records sorted by ID (Ascending)");
+    puts("show all sort by id desc - Show records sorted by ID (Descending)");
+    puts("show all sort by mark asc - Show records sorted by Mark (Ascending)");
+    puts("show all sort by mark desc - Show records sorted by Mark (Descending)");
 	puts("show summary  - Show summary statistics");
     puts("query ID=<id>  - Query a record by ID");
     puts("insert - Open insert menu");
@@ -201,37 +205,53 @@ int main(void) {
 
         if (strncmp(command, "open", 4) == 0) {
             action_open(command);
-        } 
+        }
         else if (strncmp(command, "show all", 8) == 0) {
             action_show_all();
-		} 
-		else if (strncmp(command, "show summary", 12) == 0) {
+        }
+        else if (strcmp(command, "show all sort by id asc") == 0) {
+            sort_records(compare_id_asc);
+            action_show_all();
+        }
+        else if (strcmp(command, "show all sort by id desc") == 0) {
+            sort_records(compare_id_desc);
+            action_show_all();
+        }
+        else if (strcmp(command, "show all sort by mark asc") == 0) {
+            sort_records(compare_mark_asc);
+            action_show_all();
+        }
+        else if (strcmp(command, "show all sort by mark desc") == 0) {
+            sort_records(compare_mark_desc);
+            action_show_all();
+        }
+        else if (strncmp(command, "show summary", 12) == 0) {
             show_summary();
-        } 
-		else if (strncmp(command, "query", 5) == 0) {
+        }
+        else if (strncmp(command, "query", 5) == 0) {
             action_query(command);
-        } 
-		else if (strncmp(command, "insert", 6) == 0) {
-          action_insert();
-		}
-		else if (strncmp(command, "create", 6) == 0) {
-    		action_create();
-        } 
-		else if (strncmp(command, "delete", 6) == 0) {
+        }
+        else if (strncmp(command, "insert", 6) == 0) {
+            action_insert();
+        }
+        else if (strncmp(command, "create", 6) == 0) {
+            action_create();
+        }
+        else if (strncmp(command, "delete", 6) == 0) {
             action_delete(command);
         }
-		else if (strncmp(command, "update", 6) == 0) {
-          get_record_refs(&records, &record_count);
-          action_update(records, record_count, command);
+        else if (strncmp(command, "update", 6) == 0) {
+            get_record_refs(&records, &record_count);
+            action_update(records, record_count, command);
         }
         else if (strncmp(command, "save", 4) == 0) {
             action_save();
-        } 
+        }
         else if (strncmp(command, "exit", 4) == 0) {
             puts("Exiting. Goodbye!");
             free_records();
             return 0;
-        } 
+        }
         else {
             puts("Invalid command. Please try again.");
         }

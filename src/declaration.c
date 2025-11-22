@@ -24,7 +24,7 @@ void show_declaration(void)
         "Team members:\n"
         "1. Lee Zhan Bin Skyler (2500339)\n"
         "2. Rifa Ilyasa Achrinza (2501769)\n"
-        "3. xxx\n"
+        "3. Siau Zi Siang (2500989)\n"
         "4. (Add remaining names if any)\n"
         "Date: 25 November 2025\n";
 

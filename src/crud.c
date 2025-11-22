@@ -736,6 +736,48 @@ void get_record_refs(Record **records_out, int *record_count_out) {
   *record_count_out = record_count;
 }
 
+
+// Sorting by ID in ascending order
+int compare_id_asc(const void *a, const void *b) {
+    const Record *rec_a = (const Record *)a;
+    const Record *rec_b = (const Record *)b;
+    return (rec_a->id > rec_b->id) - (rec_a->id < rec_b->id);
+}
+
+// Sorting by ID in descending order
+int compare_id_desc(const void *a, const void *b) {
+    const Record *rec_a = (const Record *)a;
+    const Record *rec_b = (const Record *)b;
+    return (rec_b->id > rec_a->id) - (rec_b->id < rec_a->id);
+}
+
+// Sorting by Mark in ascending order
+int compare_mark_asc(const void *a, const void *b) {
+    const Record *rec_a = (const Record *)a;
+    const Record *rec_b = (const Record *)b;
+    if (rec_a->mark < rec_b->mark) return -1;
+    if (rec_a->mark > rec_b->mark) return 1;
+    return 0;
+}
+
+// Sorting by Mark in descending order
+int compare_mark_desc(const void *a, const void *b) {
+    const Record *rec_a = (const Record *)a;
+    const Record *rec_b = (const Record *)b;
+    if (rec_a->mark > rec_b->mark) return -1;
+    if (rec_a->mark < rec_b->mark) return 1;
+    return 0;
+}
+
+// Sorting function
+void sort_records(int (*comparator)(const void *, const void *)) {
+    if (records == NULL || record_count == 0) {
+        puts("CMS: No records to sort.");
+        return;
+    }
+    qsort(records, record_count, sizeof(Record), comparator);
+}
+
 void show_summary(void) {
     if (records == NULL || record_count == 0) {
         puts("CMS: No records loaded. Please open the database first.");

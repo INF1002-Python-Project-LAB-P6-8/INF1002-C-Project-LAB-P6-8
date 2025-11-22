@@ -18,6 +18,12 @@ int count_records_by_id(int id);
 void show_summary(void);
 void free_records(void);
 
+void sort_records(int (*comparator)(const void *, const void *));
+int compare_id_asc(const void *a, const void *b);
+int compare_id_desc(const void *a, const void *b);
+int compare_mark_asc(const void *a, const void *b);
+int compare_mark_desc(const void *a, const void *b);
+
 int insert_record(char* input); // Insert function
 
 int id_check(char* input);
