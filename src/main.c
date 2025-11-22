@@ -206,23 +206,19 @@ int main(void) {
         if (strncmp(command, "open", 4) == 0) {
             action_open(command);
         }
-        else if (strncmp(command, "show all", 8) == 0) {
-            action_show_all();
-        }
         else if (strcmp(command, "show all sort by id asc") == 0) {
-            sort_records(compare_id_asc);
-            action_show_all();
+            show_sorted_records(compare_id_asc);
         }
         else if (strcmp(command, "show all sort by id desc") == 0) {
-            sort_records(compare_id_desc);
-            action_show_all();
+            show_sorted_records(compare_id_desc);
         }
         else if (strcmp(command, "show all sort by mark asc") == 0) {
-            sort_records(compare_mark_asc);
-            action_show_all();
+            show_sorted_records(compare_mark_asc);
         }
         else if (strcmp(command, "show all sort by mark desc") == 0) {
-            sort_records(compare_mark_desc);
+            show_sorted_records(compare_mark_desc);
+        }
+        else if (strncmp(command, "show all", 8) == 0) {
             action_show_all();
         }
         else if (strncmp(command, "show summary", 12) == 0) {

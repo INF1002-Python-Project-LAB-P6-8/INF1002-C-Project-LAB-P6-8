@@ -932,12 +932,33 @@ int compare_mark_desc(const void *a, const void *b) {
 }
 
 // Sorting function
-void sort_records(int (*comparator)(const void *, const void *)) {
+void show_sorted_records(int (*comparator)(const void *, const void *)) {
     if (records == NULL || record_count == 0) {
         puts("CMS: No records to sort.");
         return;
     }
-    qsort(records, record_count, sizeof(Record), comparator);
+
+    // Create a temporary copy of the records
+    Record *sorted_records = (Record *)malloc(record_count * sizeof(Record));
+    if (sorted_records == NULL) {
+        perror("Memory allocation failed for sorting");
+        return;
+    }
+    memcpy(sorted_records, records, record_count * sizeof(Record));
+
+    // Sort the temporary copy
+    qsort(sorted_records, record_count, sizeof(Record), comparator);
+
+    // Print the sorted records
+    printf("CMS: Here are all the records found in the table \"StudentRecords\".\n");
+    printf("%-10s %-20s %-25s %-10s\n", "ID", "Name", "Programme", "Mark"); // Column headers
+    for (int i = 0; i < record_count; i++) {
+        printf("%-10d %-20s %-25s %-10.1f\n",
+               sorted_records[i].id, sorted_records[i].name, sorted_records[i].programme, sorted_records[i].mark);
+    }
+
+    // Free the temporary copy
+    free(sorted_records);
 }
 
 void show_summary(void) {
