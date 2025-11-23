@@ -722,7 +722,7 @@ int mark_check(char* input) {
     // Check range 0.0 to 100.0
     double value = atof(input);
     if (value < 0.0 || value > 100.0) {
-        printf("\nError: Mark must be between 0.0 and 100.0\n");
+        printf("\nError: Mark should only contain 0.0 to 100.0\n");
         return 1;
     }
     return 0;
@@ -1133,4 +1133,5 @@ int create_database(char* input) {
     printf("Successfully created database: %s.txt\n", filename);
     return 0;
 }
+
 
